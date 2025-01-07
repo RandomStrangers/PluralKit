@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+base64 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
+jsonwebtoken = { workspace = true }
 model_macros = { path = "../model_macros" }
 sea-query = "0.32.1"
 serde = { workspace = true }

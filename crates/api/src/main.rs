@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 use axum::{
     body::Body,
     extract::{Request as ExtractRequest, State},
@@ -10,6 +11,7 @@ use hyper_util::{
     client::legacy::{connect::HttpConnector, Client},
     rt::TokioExecutor,
 };
+use jsonwebtoken::{DecodingKey, EncodingKey};
 use tracing::{error, info};
 
 mod endpoints;
@@ -24,6 +26,11 @@ pub struct ApiContext {
 
     rproxy_uri: String,
     rproxy_client: Client<HttpConnector, Body>,
+
+    token_privatekey: EncodingKey,
+    token_publickey: DecodingKey,
+
+    internal_request_secret: String,
 }
 
 async fn rproxy(
@@ -111,12 +118,15 @@ fn router(ctx: ApiContext) -> Router {
         .route("/private/discord/shard_state", get(endpoints::private::discord_state))
         .route("/private/stats", get(endpoints::private::meta))
 
+        .route("/internal/apikey", post(endpoints::internal::create_api_key))
+
         .route("/v2/systems/:system_id/oembed.json", get(rproxy))
         .route("/v2/members/:member_id/oembed.json", get(rproxy))
         .route("/v2/groups/:group_id/oembed.json", get(rproxy))
 
-        .layer(middleware::ratelimit::ratelimiter(middleware::ratelimit::do_request_ratelimited)) // this sucks
+        .layer(middleware::ratelimit::ratelimiter(ctx.clone(), middleware::ratelimit::do_request_ratelimited))
         .layer(axum::middleware::from_fn_with_state(ctx.clone(), middleware::authnz))
+        .layer(axum::middleware::from_fn_with_state(ctx.clone(), middleware::gate_internal_routes))
         .layer(axum::middleware::from_fn(middleware::ignore_invalid_routes))
         .layer(axum::middleware::from_fn(middleware::cors))
         .layer(axum::middleware::from_fn(middleware::logger))
@@ -133,14 +143,9 @@ async fn real_main() -> anyhow::Result<()> {
     let db = libpk::db::init_data_db().await?;
     let redis = libpk::db::init_redis().await?;
 
-    let rproxy_uri = Uri::from_static(
-        &libpk::config
-            .api
-            .as_ref()
-            .expect("missing api config")
-            .remote_url,
-    )
-    .to_string();
+    let cfg = libpk::config.api.as_ref().expect("missing api config");
+
+    let rproxy_uri = Uri::from_static(cfg.remote_url.as_str()).to_string();
     let rproxy_client = hyper_util::client::legacy::Client::<(), ()>::builder(TokioExecutor::new())
         .build(HttpConnector::new());
 
@@ -150,16 +155,18 @@ async fn real_main() -> anyhow::Result<()> {
 
         rproxy_uri: rproxy_uri[..rproxy_uri.len() - 1].to_string(),
         rproxy_client,
+
+        token_privatekey: EncodingKey::from_ec_pem(cfg.token_privatekey.as_bytes())
+            .expect("failed to load private key"),
+        token_publickey: DecodingKey::from_ec_pem(cfg.token_publickey.as_bytes())
+            .expect("failed to load public key"),
+
+        internal_request_secret: cfg.internal_request_secret.clone(),
     };
 
     let app = router(ctx);
 
-    let addr: &str = libpk::config
-        .api
-        .as_ref()
-        .expect("missing api config")
-        .addr
-        .as_ref();
+    let addr: &str = cfg.addr.as_ref();
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     info!("listening on {}", addr);

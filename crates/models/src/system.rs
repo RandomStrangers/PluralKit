@@ -1,35 +1,11 @@
-use std::error::Error;
-
+use crate::PrivacyLevel;
 use model_macros::pk_model;
 
 use chrono::NaiveDateTime;
-use sqlx::{postgres::PgTypeInfo, Database, Decode, Postgres, Type};
 use uuid::Uuid;
-
-use crate::_util::fake_enum_impls;
 
 // todo: fix this
 pub type SystemId = i32;
-
-// todo: move this
-#[derive(serde::Serialize, Debug, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum PrivacyLevel {
-    Public,
-    Private,
-}
-
-fake_enum_impls!(PrivacyLevel);
-
-impl From<i32> for PrivacyLevel {
-    fn from(value: i32) -> Self {
-        match value {
-            1 => PrivacyLevel::Public,
-            2 => PrivacyLevel::Private,
-            _ => unreachable!(),
-        }
-    }
-}
 
 #[pk_model]
 struct System {

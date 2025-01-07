@@ -11,3 +11,6 @@ pub mod ratelimit;
 
 mod authnz;
 pub use authnz::authnz;
+
+mod internal;
+pub use internal::gate_internal_routes;

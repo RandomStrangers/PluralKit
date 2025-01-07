@@ -30,3 +30,4 @@ macro_rules! define_error {
 }
 
 // define_error! { GENERIC_BAD_REQUEST, StatusCode::BAD_REQUEST, 0, "400: Bad Request" }
+// define_error! { GENERIC_UNAUTHORIZED, StatusCode::UNAUTHORIZED, 0, "401: Missing or invalid Authorization header" }
