@@ -39,17 +39,20 @@ These tokens must be supplied with a "Bearer" prefix in the `Authorization` HTTP
 
 The JSON blob in the above example API key contains the following:
 
-```json
+```js
 {
-  "tid": "75a386e7-f23e-4f3a-b904-ca803149af5a", // API key ID
-  "sid": "22b0b07b-4fa7-4fa1-bf25-eeb8665f32c1", // UUID of the PluralKit system the token belongs to
+    // API key ID
+    "tid": "75a386e7-f23e-4f3a-b904-ca803149af5a",
 
-  "type": "user_created",                        // "user_created" for manually generated API keys,
-                                                 // "external_app" for OAuth2 user API keys (coming soon!)
+    // UUID of the PluralKit system the token belongs to
+    "sid": "22b0b07b-4fa7-4fa1-bf25-eeb8665f32c1",  
 
-  "scopes": [
-    "write:all"                                  // One or more scopes
-  ]
+    // "user_created" for manually generated API keys,
+    // "external_app" for OAuth2 user API keys (coming soon!)
+    "type": "user_created",
+
+    // One or more scopes (see below)
+    "scopes": ["write:all"]
 }
 ```
 

@@ -7,18 +7,25 @@ using Newtonsoft.Json.Linq;
 
 using NodaTime;
 
+using Serilog;
+
 namespace PluralKit.Core;
 
 public class ApiKeyService
 {
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
+    private readonly ILogger _logger;
     private readonly CoreConfig _cfg;
     private readonly ILifetimeScope _provider;
 
-    public ApiKeyService(ILifetimeScope provider, CoreConfig cfg)
+    public ApiKeyService(ILogger logger, ILifetimeScope provider, CoreConfig cfg)
     {
+        _logger = logger;
         _cfg = cfg;
         _provider = provider;
+
+        _client = new HttpClient();
+        _client.DefaultRequestHeaders.Add("User-Agent", "PluralKitInternal");
     }
 
     public async Task<string?> CreateUserApiKey(SystemId systemId, string keyName, string[] keyScopes, bool check = false)
@@ -34,21 +41,28 @@ public class ApiKeyService
         if (system == null)
             return null;
 
-        var req = new JObject();
-        req.Add("check", check);
-        req.Add("system", system.Id.Value);
-        req.Add("name", keyName);
-        req.Add("scopes", new JArray(keyScopes));
+        var reqData = new JObject();
+        reqData.Add("check", check);
+        reqData.Add("system", system.Id.Value);
+        reqData.Add("name", keyName);
+        reqData.Add("scopes", new JArray(keyScopes));
 
-        var body = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
-        var res = await _client.PostAsync(uri, body);
+        var req = new HttpRequestMessage()
+        {
+            RequestUri = uri,
+            Method = HttpMethod.Post,
+            Content = new StringContent(JsonConvert.SerializeObject(reqData), Encoding.UTF8, "application/json"),
+        };
+        req.Headers.Add("X-Pluralkit-InternalAuth", _cfg.InternalApiToken);
+
+        var res = await _client.SendAsync(req);
         var data = JsonConvert.DeserializeObject<JObject>(await res.Content.ReadAsStringAsync());
 
         if (data.ContainsKey("error"))
-            throw new Exception(data.Value<string>("error"));
+            throw new Exception($"API key validation failed: {(data.Value<string>("error"))}");
 
         if (data.Value<bool>("valid") != true)
-            throw new Exception("unknown validation error");
+            throw new Exception("API key validation failed: unknown error");
 
         if (!data.ContainsKey("token"))
             return null;

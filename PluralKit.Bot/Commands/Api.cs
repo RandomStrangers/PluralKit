@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Myriad.Builders;
 using Myriad.Extensions;
 using Myriad.Rest.Exceptions;
+using Myriad.Rest.Types;
 using Myriad.Rest.Types.Requests;
 using Myriad.Types;
 
@@ -22,13 +23,17 @@ public class Api
 
     private readonly BotConfig _botConfig;
     private readonly DispatchService _dispatch;
+    private readonly InteractionDispatchService _interactions;
     private readonly PrivateChannelService _dmCache;
+    private readonly ApiKeyService _apiKey;
 
-    public Api(BotConfig botConfig, DispatchService dispatch, PrivateChannelService dmCache)
+    public Api(BotConfig botConfig, DispatchService dispatch, InteractionDispatchService interactions, PrivateChannelService dmCache, ApiKeyService apiKey)
     {
         _botConfig = botConfig;
         _dispatch = dispatch;
+        _interactions = interactions;
         _dmCache = dmCache;
+        _apiKey = apiKey;
     }
 
     public async Task GetToken(Context ctx)
@@ -177,6 +182,84 @@ public class Api
         await ctx.Repository.UpdateSystem(ctx.System.Id, new SystemPatch { WebhookUrl = newUrl, WebhookToken = newToken });
 
         await ctx.Reply($"{Emojis.Success} Successfully the new webhook URL for your system.");
+    }
+
+    public async Task ApiKeyCreate(Context ctx)
+    {
+        if (!ctx.HasNext())
+            throw new PKSyntaxError($"An API key name must be provided.");
+
+        var rawScopes = ctx.MatchFlag("scopes", "scope");
+        var keyName = ctx.PopArgument();
+        List<string> keyScopes = new();
+
+        if (!ctx.HasNext())
+            throw new PKSyntaxError($"A list of API key scopes must be provided.");
+
+        var scopestr = ctx.RemainderOrNull()!.NormalizeLineEndSpacing().Trim();
+        if (rawScopes)
+            keyScopes = scopestr.Split(" ").ToList();
+        else
+            keyScopes.Add(scopestr switch
+            {
+                "full" => "write:all",
+                "read private" => "read:all",
+                "read public" => "readpublic:all",
+                "identify" => "identify",
+                _ => throw new PKError(
+                    $"Couldn't find a scope preset named {scopestr}."),
+            });
+
+        string? check = null!;
+        try
+        {
+            check = await _apiKey.CreateUserApiKey(ctx.System.Id, keyName, keyScopes.ToArray(), check: true);
+            if (check != null)
+                throw new PKError("API key validation failed: unknown error");
+        }
+        catch (Exception ex)
+        {
+            if (ex.Message.StartsWith("API key"))
+                throw new PKError(ex.Message);
+            throw;
+        }
+
+        async Task cb(InteractionContext ictx)
+        {
+            var newKey = await _apiKey.CreateUserApiKey(ctx.System.Id, keyName, keyScopes.ToArray());
+            await ictx.Reply($"Your new API key is below. You will only be shown this once, so please save it!\n\n||`{newKey}`||");
+            await ctx.Rest.EditMessage(ictx.ChannelId, ictx.MessageId!.Value, new MessageEditRequest
+            {
+                Components = new MessageComponent[] { },
+            });
+        }
+
+        var content =
+            $"Ready to create a new API key named **{keyName}**, "
+            + $"with these scopes: {(String.Join(", ", keyScopes.Select(x => x.AsCode())))}\n"
+            + "To create this API key, press the button below.";
+
+        await ctx.Rest.CreateMessage(ctx.Channel.Id, new MessageRequest
+        {
+            Content = content,
+            AllowedMentions = new() { Parse = new AllowedMentions.ParseType[] { }, RepliedUser = false },
+            Components = new[] {
+                new MessageComponent
+                {
+                    Type = ComponentType.ActionRow,
+                    Components = new[]
+                    {
+                        new MessageComponent
+                        {
+                            Type = ComponentType.Button,
+                            Style = ButtonStyle.Primary,
+                            Label = "Create API key",
+                            CustomId = _interactions.Register(cb),
+                        },
+                    }
+                }
+            },
+        });
     }
 
     public async Task ApiKeyList(Context ctx)

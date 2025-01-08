@@ -103,6 +103,7 @@ pub async fn create_api_key_user(
     (
         StatusCode::OK,
         serde_json::to_string(&serde_json::json!({
+            "valid": true,
             "token": token,
         }))
         .expect("should not error"),

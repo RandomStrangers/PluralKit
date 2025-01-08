@@ -328,7 +328,7 @@ public partial class CommandTree
     {
         ctx.CheckSystem();
         if (ctx.Match("new", "n", "add", "create", "register"))
-            return;
+            await ctx.Execute<Api>(null, c => c.ApiKeyCreate(ctx));
         else if (ctx.Match("list", "l"))
             await ctx.Execute<Api>(null, c => c.ApiKeyList(ctx));
         else
