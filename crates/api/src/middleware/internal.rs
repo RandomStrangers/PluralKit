@@ -5,9 +5,13 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-use crate::{ApiContext, util::header_or_unknown};
+use crate::{util::header_or_unknown, ApiContext};
 
-pub async fn gate_internal_routes(State(ctx): State<ApiContext>, mut request: Request, next: Next) -> Response {
+pub async fn gate_internal_routes(
+    State(ctx): State<ApiContext>,
+    mut request: Request,
+    next: Next,
+) -> Response {
     let path = request
         .extensions()
         .get::<MatchedPath>()
@@ -17,26 +21,20 @@ pub async fn gate_internal_routes(State(ctx): State<ApiContext>, mut request: Re
 
     let headers = request.headers_mut();
     headers.remove("x-pluralkit-internal");
-    let source_ip = header_or_unknown(headers.get("X-PluralKit-Client-IP"));
-    let authkey = header_or_unknown(headers.get("X-PluralKit-InternalAuth"));
 
     if path.starts_with("/internal") {
-        let internal_ok = match source_ip {
-            "127.0.0.1" => true,
-            _ => false,
-        };
-
-        if internal_ok && authkey == ctx.internal_request_secret {
-            headers.append("x-pluralkit-internal", HeaderValue::from_static("1"));
-            return next.run(request).await;
+        let fail_response =
+            (StatusCode::FORBIDDEN, r#"{"message":"go away","code":0}"#).into_response();
+        if headers.get("X-PluralKit-Client-IP").is_some() {
+            return fail_response;
         }
 
-        return
-        (
-            StatusCode::FORBIDDEN,
-            r#"{"message":"go away","code":0}"#,
-        )
-        .into_response();
+        let authkey = header_or_unknown(headers.get("X-PluralKit-InternalAuth"));
+        if authkey != ctx.internal_request_secret {
+            return fail_response;
+        }
+
+        headers.append("x-pluralkit-internal", HeaderValue::from_static("1"));
     }
 
     next.run(request).await

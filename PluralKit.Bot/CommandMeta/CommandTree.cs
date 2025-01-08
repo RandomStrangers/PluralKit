@@ -218,6 +218,8 @@ public partial class CommandTree
         // todo: these aren't deprecated but also shouldn't be here
         else if (ctx.Match("webhook", "hook"))
             await ctx.Execute<Api>(null, m => m.SystemWebhook(ctx));
+        else if (ctx.Match("apikey", "apikeys", "apitoken", "apitokens"))
+            await HandleSystemApiKeyCommand(ctx);
         else if (ctx.Match("proxy"))
             await ctx.Execute<SystemEdit>(SystemProxy, m => m.SystemProxy(ctx));
 
@@ -320,6 +322,40 @@ public partial class CommandTree
                 await ctx.CheckSystem(target).Execute<Random>(GroupRandom, r => r.Group(ctx, target));
             else
                 await ctx.CheckSystem(target).Execute<Random>(MemberRandom, m => m.Member(ctx, target));
+    }
+
+    private async Task HandleSystemApiKeyCommand(Context ctx)
+    {
+        ctx.CheckSystem();
+        if (ctx.Match("new", "n", "add", "create", "register"))
+            return;
+        else if (ctx.Match("list", "l"))
+            await ctx.Execute<Api>(null, c => c.ApiKeyList(ctx));
+        else
+        {
+            PKApiKey? key = null!;
+            if (Guid.TryParse(ctx.PeekArgument(), out var keyId))
+            {
+                key = await ctx.Repository.GetApiKey(keyId);
+            }
+
+            if (key.System != ctx.System.Id)
+                key = null!;
+
+            if (key == null)
+            {
+                await ctx.Reply($"{Emojis.Error} {ctx.CreateNotFoundError("API key", ctx.PopArgument())}");
+                return;
+            }
+
+            ctx.PopArgument();
+            if (ctx.Match("rename", "name", "changename", "setname", "rn"))
+                await ctx.Execute<Api>(null, c => c.ApiKeyRename(ctx, key));
+            else if (ctx.Match("delete", "remove", "destroy", "erase", "yeet"))
+                await ctx.Execute<Api>(null, c => c.ApiKeyDelete(ctx, key));
+            else
+                await PrintCommandNotFoundError(ctx);
+        }
     }
 
     private async Task HandleMemberCommand(Context ctx)

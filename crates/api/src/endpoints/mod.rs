@@ -1,2 +1,2 @@
-pub mod private;
 pub mod internal;
+pub mod private;

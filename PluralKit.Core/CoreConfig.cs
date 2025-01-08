@@ -16,7 +16,7 @@ public class CoreConfig
     public string? SeqLogUrl { get; set; }
     public string? DispatchProxyUrl { get; set; }
     public string? DispatchProxyToken { get; set; }
-    public string? InternalApiUrl { get; set; }
+    public string? InternalApiBaseUrl { get; set; }
     public string? InternalApiToken { get; set; }
 
     public LogEventLevel ConsoleLogLevel { get; set; } = LogEventLevel.Debug;

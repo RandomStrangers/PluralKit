@@ -1,9 +1,13 @@
+using System.Text;
 using System.Text.RegularExpressions;
 
+using Myriad.Builders;
 using Myriad.Extensions;
 using Myriad.Rest.Exceptions;
 using Myriad.Rest.Types.Requests;
 using Myriad.Types;
+
+using NodaTime;
 
 using PluralKit.Core;
 
@@ -11,6 +15,8 @@ namespace PluralKit.Bot;
 
 public class Api
 {
+    private record PaginatedApiKey(Guid Id, string Name, string[] Scopes, string? AppName, Instant Created);
+
     private static readonly Regex _webhookRegex =
         new("https://(?:\\w+.)?discord(?:app)?.com/api(?:/v.*)?/webhooks/(.*)");
 
@@ -171,5 +177,63 @@ public class Api
         await ctx.Repository.UpdateSystem(ctx.System.Id, new SystemPatch { WebhookUrl = newUrl, WebhookToken = newToken });
 
         await ctx.Reply($"{Emojis.Success} Successfully the new webhook URL for your system.");
+    }
+
+    public async Task ApiKeyList(Context ctx)
+    {
+        var keys = await ctx.Repository.GetSystemApiKeys(ctx.System.Id)
+            .Select(k => new PaginatedApiKey(k.Id, k.Name, k.Scopes, null, k.Created))
+            .ToListAsync();
+
+        await ctx.Paginate<PaginatedApiKey>(
+            keys.ToAsyncEnumerable(),
+            keys.Count,
+            10,
+            "Current API keys for your system",
+            ctx.System.Color,
+            (eb, l) =>
+            {
+                var description = new StringBuilder();
+
+                foreach (var item in l)
+                {
+                    description.Append($"**{item.Name}** (`{item.Id}`)");
+                    description.AppendLine();
+
+                    description.Append("- Scopes: ");
+                    description.Append(String.Join(", ", item.Scopes.Select(sc => $"`{sc}`")));
+                    description.AppendLine();
+                    description.Append("- Created: ");
+                    description.Append(item.Created.FormatZoned(ctx.Zone));
+                    description.AppendLine();
+                    description.AppendLine();
+                }
+
+                eb.Description(description.ToString());
+                return Task.CompletedTask;
+            }
+        );
+    }
+
+    public async Task ApiKeyRename(Context ctx, PKApiKey key)
+    {
+        if (!ctx.HasNext())
+            throw new PKError("You must provide a new name for this API key.");
+
+        var name = ctx.RemainderOrNull(false).NormalizeLineEndSpacing();
+        await ctx.Repository.UpdateApiKey(key.Id, new ApiKeyPatch { Name = name });
+        await ctx.Reply($"{Emojis.Success} API key renamed.");
+    }
+
+    public async Task ApiKeyDelete(Context ctx, PKApiKey key)
+    {
+        if (!await ctx.PromptYesNo($"Really delete API key {key.Name} `{key.Id}`?", "Delete", matchFlag: false))
+        {
+            await ctx.Reply($"{Emojis.Error} Deletion cancelled.");
+            return;
+        }
+
+        await ctx.Repository.DeleteApiKey(key.Id);
+        await ctx.Reply($"{Emojis.Success} Successfully deleted API key.");
     }
 }

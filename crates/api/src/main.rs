@@ -118,7 +118,7 @@ fn router(ctx: ApiContext) -> Router {
         .route("/private/discord/shard_state", get(endpoints::private::discord_state))
         .route("/private/stats", get(endpoints::private::meta))
 
-        .route("/internal/apikey", post(endpoints::internal::create_api_key))
+        .route("/internal/apikey/user", post(endpoints::internal::create_api_key_user))
 
         .route("/v2/systems/:system_id/oembed.json", get(rproxy))
         .route("/v2/members/:member_id/oembed.json", get(rproxy))

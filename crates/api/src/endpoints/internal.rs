@@ -1,10 +1,10 @@
-use crate::{ApiContext, util::json_err};
-use pluralkit_models::{SystemId, PKApiKey, ApiKeyType, PKSystem};
+use crate::{util::json_err, ApiContext};
+use pluralkit_models::{ApiKeyType, PKApiKey, PKSystem, SystemId};
 
 use axum::{
     extract::State,
-    response::{Response, IntoResponse, Json},
     http::StatusCode,
+    response::{IntoResponse, Json, Response},
 };
 
 #[derive(serde::Deserialize)]
@@ -16,7 +16,7 @@ pub struct NewApiKeyRequestData {
     scopes: Vec<String>,
 }
 
-pub async fn create_api_key(
+pub async fn create_api_key_user(
     State(ctx): State<ApiContext>,
     Json(req): Json<NewApiKeyRequestData>,
 ) -> Response {
@@ -60,10 +60,7 @@ pub async fn create_api_key(
         if !ok {
             return json_err(
                 StatusCode::BAD_REQUEST,
-                format!(
-                    r#"{{"internal":true,"error":"invalid scope: {}"}}"#,
-                    scope,
-                ),
+                format!(r#"{{"internal":true,"error":"invalid scope: {}"}}"#, scope,),
             );
         }
     }

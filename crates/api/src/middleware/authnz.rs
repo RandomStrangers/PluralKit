@@ -1,10 +1,10 @@
 use axum::{
-    extract::{Request, MatchedPath, State},
-    http::{Method, HeaderValue},
+    extract::{MatchedPath, Request, State},
+    http::{HeaderValue, Method},
     middleware::Next,
     response::Response,
 };
-use pluralkit_models::{PKApiKey, ApiKeyType};
+use pluralkit_models::{ApiKeyType, PKApiKey};
 use sqlx::Postgres;
 use tracing::error;
 
@@ -78,33 +78,37 @@ pub fn apikey_can_access(token: &PKApiKey, method: Method, endpoint: String) -> 
     for rscope in token.scopes.iter() {
         let scope = rscope.split(":").collect::<Vec<&str>>();
         let na = match (&method, &scope[..]) {
-            (&Method::GET, ["identify"]) =>
+            (&Method::GET, ["identify"]) => {
                 if &endpoint == "/v2/systems/:system_id" {
                     ApiKeyAccess::PublicRead
                 } else {
                     ApiKeyAccess::None
-                },
+                }
+            }
 
-            (&Method::GET, ["publicread", part]) =>
+            (&Method::GET, ["publicread", part]) => {
                 if *part == "all" || is_part_path(part.as_ref(), endpoint.as_ref()) {
                     ApiKeyAccess::PublicRead
                 } else {
                     ApiKeyAccess::None
-                },
+                }
+            }
 
-            (&Method::GET, ["read", part]) =>
+            (&Method::GET, ["read", part]) => {
                 if *part == "all" || is_part_path(part.as_ref(), endpoint.as_ref()) {
                     ApiKeyAccess::PrivateRead
                 } else {
                     ApiKeyAccess::None
-                },
+                }
+            }
 
-            (_, ["write", part]) =>
+            (_, ["write", part]) => {
                 if *part == "all" || is_part_path(part.as_ref(), endpoint.as_ref()) {
                     ApiKeyAccess::Full
                 } else {
                     ApiKeyAccess::None
-                },
+                }
+            }
 
             _ => ApiKeyAccess::None,
         };

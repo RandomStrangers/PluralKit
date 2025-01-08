@@ -1,19 +1,19 @@
-use crate::{ApiContext, util::json_err};
+use crate::{util::json_err, ApiContext};
 use libpk::config;
 use pluralkit_models::{PKApiKey, PKSystem, PKSystemConfig};
 
 use axum::{
     extract::{self, State},
-    response::{Response, IntoResponse, Json},
+    response::{IntoResponse, Json, Response},
 };
 use fred::interfaces::*;
+use hyper::StatusCode;
 use libpk::state::ShardState;
+use reqwest::ClientBuilder;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::time::Duration;
-use hyper::StatusCode;
-use reqwest::ClientBuilder;
 
 pub async fn discord_state(State(ctx): State<ApiContext>) -> Json<Value> {
     let mut shard_status = ctx
