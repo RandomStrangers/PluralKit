@@ -51,6 +51,7 @@ pub async fn create_api_key_user(
                 "system" => true,
                 "members" => true,
                 "groups" => true,
+                "fronters" => true,
                 "switches" => true,
                 _ => false,
             },

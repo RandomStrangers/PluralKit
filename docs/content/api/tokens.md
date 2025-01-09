@@ -70,7 +70,8 @@ In the below table, `<X>` refers to a *permission level* - one of the following:
 |`<X>:system`|Access to core system data, system settings (including autoproxy), and server-specific settings|
 |`<X>:members`|Access to member information, *not including group membership*|
 |`<X>:groups`|Access to group information|
-|`<X>:switches`|Access to current system fronters, and full switch history|
+|`<X>:fronters`|Access to current system fronters|
+|`<X>:switches`|Access to full system switch history (implies `<X>:fronters`)|
 |`<X>:all`|Includes all other scopes|
 
 ### Issuing new API keys

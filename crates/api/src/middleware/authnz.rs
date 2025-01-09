@@ -59,7 +59,12 @@ pub fn is_part_path<'a, 'b>(part: &'a str, endpoint: &'b str) -> bool {
             ["members", _, "groups", ..] => true,
             _ => false,
         },
+        "fronters" => match &path_frags[..] {
+            ["systems", _, "fronters"] => true,
+            _ => false,
+        },
         "switches" => match &path_frags[..] {
+            // switches implies fronters
             ["systems", _, "fronters"] => true,
             ["systems", _, "switches"] => true,
             ["systems", _, "switches", ..] => true,

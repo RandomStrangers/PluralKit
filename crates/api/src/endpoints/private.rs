@@ -10,7 +10,6 @@ use fred::interfaces::*;
 use hyper::StatusCode;
 use libpk::state::ShardState;
 use reqwest::ClientBuilder;
-use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::time::Duration;
