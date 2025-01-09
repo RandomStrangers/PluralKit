@@ -101,6 +101,12 @@ public class PKControllerBase: ControllerBase
         return null;
     }
 
+    protected bool IsAuthenticatedAs(SystemId system)
+    {
+        HttpContext.Items.TryGetValue("SystemId", out var systemId);
+        return systemId != null && (SystemId)systemId == system;
+    }
+
     protected LookupContext ContextFor(PKSystem system)
     {
         HttpContext.Items.TryGetValue("SystemId", out var systemId);
