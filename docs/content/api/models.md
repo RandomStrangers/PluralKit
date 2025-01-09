@@ -40,7 +40,7 @@ Every PluralKit entity has two IDs: a short (5 or 6 character) ID and a longer U
 |---|---|---|
 |id|string||
 |uuid|string||
-|?system|string|id of system this member is registered in (only returned in `/members/:id` endpoint)|
+|system|string|id of system this member is registered in|
 |name|string|100-character limit|
 |display_name|?string|100-character limit|
 |color|?string|6-character hex code, no `#` at the beginning|
@@ -76,7 +76,7 @@ Every PluralKit entity has two IDs: a short (5 or 6 character) ID and a longer U
 |---|---|---|
 |id|string||
 |uuid|string||
-|?system|string|id of system this group is registered in (only returned in `/groups/:id` endpoint)|
+|system|string|id of system this group is registered in|
 |name|string|100-character limit|
 |display_name|?string|100-character limit|
 |description|?string|1000-character limit|
@@ -93,7 +93,7 @@ Every PluralKit entity has two IDs: a short (5 or 6 character) ID and a longer U
 |---|---|---|
 |id|uuid||
 |timestamp|datetime||
-| members   | list of id/Member | Is sometimes in plain ID list form (eg. `GET /systems/:id/switches`), sometimes includes the full Member model (eg. `GET /systems/:id/fronters`). |
+|members|list of id/Member|Is sometimes in plain ID list form (eg. `GET /systems/:id/switches`), sometimes includes the full Member model (eg. `GET /systems/:id/fronters`)|
 
 ### Message model
 
@@ -118,6 +118,13 @@ Every PluralKit entity has two IDs: a short (5 or 6 character) ID and a longer U
 |member_default_private*|boolean|whether members created through the bot have privacy settings set to private by default|
 |group_default_private*|boolean|whether groups created through the bot have privacy settings set to private by default|
 |show_private_info|boolean|whether the bot shows the system's own private information without a `-private` flag|
+|case_sensitive_proxy_tags|boolean|whether the system's member proxy tags are parsed as case sensitive|
+|proxy_error_message_enabled|boolean|whether to show proxying-specific error messages|
+|hid_display_split|boolean|if enabled, the system prefers 6-character IDs to be displayed with a hyphen splitting each group of 3 characters|
+|hid_display_caps|boolean|if enabled, the system prefers short IDs to be displayed in all-caps|
+|hid_list_padding|one of "off", "left", "right"|system preference for padding short IDs in lists|
+|proxy_switch|one of "off", "new", "add"||
+|name_format|string|formatting template for display names for the system's proxied messages|
 |member_limit|int|read-only, defaults to 1000|
 |group_limit|int|read-only, defaults to 250|
 
@@ -155,7 +162,7 @@ Every PluralKit entity has two IDs: a short (5 or 6 character) ID and a longer U
 
 |key|type|notes|
 |---|---|---|
-|guild_id|snowflake|only sent if the guild ID isn't already known (in dispatch payloads)|
+|?guild_id|snowflake|only sent if the guild ID isn't already known (in dispatch payloads)|
 |display_name|?string|100-character limit|
 |avatar_url|?string|256-character limit, must be a publicly-accessible URL|
 |keep_proxy|?boolean||

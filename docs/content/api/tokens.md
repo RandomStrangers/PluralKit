@@ -1,9 +1,9 @@
 ---
-title: Tokens / API keys
+title: API keys / tokens
 permalink: /api/tokens
 ---
 
-# Tokens / API keys
+# API keys / tokens
 
 There are currently two types of API keys / tokens used by PluralKit - "legacy" tokens from the `pk;token` command (64 characters, a system can only have one valid token at a time); and "modern" API keys (variable length, always start with `pkapi:').
 
@@ -15,13 +15,13 @@ There are currently two types of API keys / tokens used by PluralKit - "legacy" 
 LvWacQm3Yu+Jbhl8B7LR97Q4kfpAasTiB8/BY5/HJCppHFggzwOai6QBxehAJ53C
 ```
 
-These tokens are supplied *as-is* in the `Authorization` HTTP header when talking to the PluralKit API.
+These tokens are supplied *as-is* in the `Authorization` HTTP header when talking to the PluralKit API (e.g. `Authorization: LvWacQm3Y...`)
 
 Each PluralKit system can only have *one* valid "legacy" token at a time, and that token holds the keys to the entire castle - it grants full read/write privileges.
 
 **PluralKit's API will stop accepting "legacy" tokens for authentication in the near future!** We do not yet have a deprecation plan set in stone, but there will be a significant notice period before this happens.
 
-## "Modern" API key format
+## "Modern" API keys
 
 A "modern" PluralKit API key is made up of three components, separated by colons:
 
@@ -72,3 +72,7 @@ In the below table, `<X>` refers to a *permission level* - one of the following:
 |`<X>:groups`|Access to group information|
 |`<X>:switches`|Access to current system fronters, and full switch history|
 |`<X>:all`|Includes all other scopes|
+
+### Issuing new API keys
+
+TODO
