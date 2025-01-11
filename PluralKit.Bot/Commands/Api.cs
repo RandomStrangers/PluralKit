@@ -198,7 +198,7 @@ public class Api
 
         var scopestr = ctx.RemainderOrNull()!.NormalizeLineEndSpacing().Trim();
         if (rawScopes)
-            keyScopes = scopestr.Split(" ").ToList();
+            keyScopes = scopestr.Split(" ").Distinct().ToList();
         else
             keyScopes.Add(scopestr switch
             {
@@ -226,6 +226,12 @@ public class Api
 
         async Task cb(InteractionContext ictx)
         {
+            if (ictx.User.Id != ctx.Author.Id)
+            {
+                await ictx.Ignore();
+                return;
+            }
+
             var newKey = await _apiKey.CreateUserApiKey(ctx.System.Id, keyName, keyScopes.ToArray());
             await ictx.Reply($"Your new API key is below. You will only be shown this once, so please save it!\n\n||`{newKey}`||");
             await ctx.Rest.EditMessage(ictx.ChannelId, ictx.MessageId!.Value, new MessageEditRequest

@@ -329,7 +329,7 @@ public partial class CommandTree
         ctx.CheckSystem();
         if (ctx.Match("new", "n", "add", "create", "register"))
             await ctx.Execute<Api>(ApiKeyCreate, c => c.ApiKeyCreate(ctx));
-        else if (ctx.Match("list", "l"))
+        else if (ctx.Match("list", "ls", "l"))
             await ctx.Execute<Api>(ApiKeyList, c => c.ApiKeyList(ctx));
         else if (!ctx.HasNext())
             await PrintCommandExpectedError(ctx, ApiKeyCreate, ApiKeyList, ApiKeyRename, ApiKeyDelete);
@@ -342,12 +342,9 @@ public partial class CommandTree
             else if (await ctx.Repository.GetApiKeyByName(ctx.System.Id, input) is PKApiKey keyByName)
                 key = keyByName;
 
-            if (key.System != ctx.System.Id)
-                key = null!;
-
-            if (key == null)
+            if (key == null || key.System != ctx.System.Id)
             {
-                await ctx.Reply($"{Emojis.Error} {ctx.CreateNotFoundError("API key", ctx.PopArgument())}");
+                await ctx.Reply($"{Emojis.Error} API key with name \"{ctx.PopArgument()}\" not found.");
                 return;
             }
 
