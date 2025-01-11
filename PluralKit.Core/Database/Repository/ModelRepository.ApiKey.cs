@@ -16,6 +16,17 @@ public partial class ModelRepository
         return await _db.QueryFirst<PKApiKey?>(query);
     }
 
+    public async Task<PKApiKey?> GetApiKeyByName(SystemId system, string name)
+    {
+        var query = new Query("api_keys")
+            .Select("id", "system", "scopes", "app", "name", "created")
+            .SelectRaw("[kind]::text")
+            .Where("system", system)
+            .WhereRaw("lower(name) = lower(?)", name.ToLower());
+
+        return await _db.QueryFirst<PKApiKey?>(query);
+    }
+
     public IAsyncEnumerable<PKApiKey> GetSystemApiKeys(SystemId system)
     {
         var query = new Query("api_keys")

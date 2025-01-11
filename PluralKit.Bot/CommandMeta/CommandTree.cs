@@ -328,16 +328,19 @@ public partial class CommandTree
     {
         ctx.CheckSystem();
         if (ctx.Match("new", "n", "add", "create", "register"))
-            await ctx.Execute<Api>(null, c => c.ApiKeyCreate(ctx));
+            await ctx.Execute<Api>(ApiKeyCreate, c => c.ApiKeyCreate(ctx));
         else if (ctx.Match("list", "l"))
-            await ctx.Execute<Api>(null, c => c.ApiKeyList(ctx));
+            await ctx.Execute<Api>(ApiKeyList, c => c.ApiKeyList(ctx));
+        else if (!ctx.HasNext())
+            await PrintCommandExpectedError(ctx, ApiKeyCreate, ApiKeyList, ApiKeyRename, ApiKeyDelete);
         else
         {
             PKApiKey? key = null!;
-            if (Guid.TryParse(ctx.PeekArgument(), out var keyId))
-            {
+            var input = ctx.PeekArgument();
+            if (Guid.TryParse(input, out var keyId))
                 key = await ctx.Repository.GetApiKey(keyId);
-            }
+            else if (await ctx.Repository.GetApiKeyByName(ctx.System.Id, input) is PKApiKey keyByName)
+                key = keyByName;
 
             if (key.System != ctx.System.Id)
                 key = null!;
@@ -350,11 +353,11 @@ public partial class CommandTree
 
             ctx.PopArgument();
             if (ctx.Match("rename", "name", "changename", "setname", "rn"))
-                await ctx.Execute<Api>(null, c => c.ApiKeyRename(ctx, key));
+                await ctx.Execute<Api>(ApiKeyRename, c => c.ApiKeyRename(ctx, key));
             else if (ctx.Match("delete", "remove", "destroy", "erase", "yeet"))
-                await ctx.Execute<Api>(null, c => c.ApiKeyDelete(ctx, key));
+                await ctx.Execute<Api>(ApiKeyDelete, c => c.ApiKeyDelete(ctx, key));
             else
-                await PrintCommandNotFoundError(ctx);
+                await PrintCommandNotFoundError(ctx, ApiKeyRename, ApiKeyDelete);
         }
     }
 

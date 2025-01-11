@@ -25,6 +25,7 @@ pub async fn gate_internal_routes(
     if path.starts_with("/internal") {
         let fail_response =
             (StatusCode::FORBIDDEN, r#"{"message":"go away","code":0}"#).into_response();
+
         if headers.get("X-PluralKit-Client-IP").is_some() {
             return fail_response;
         }

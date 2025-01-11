@@ -310,7 +310,7 @@ public class Api
 
     public async Task ApiKeyDelete(Context ctx, PKApiKey key)
     {
-        if (!await ctx.PromptYesNo($"Really delete API key {key.Name} `{key.Id}`?", "Delete", matchFlag: false))
+        if (!await ctx.PromptYesNo($"Really delete API key **{key.Name}** `{key.Id}`?", "Delete", matchFlag: false))
         {
             await ctx.Reply($"{Emojis.Error} Deletion cancelled.");
             return;
