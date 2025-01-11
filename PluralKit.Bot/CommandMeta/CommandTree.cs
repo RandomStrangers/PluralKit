@@ -331,8 +331,10 @@ public partial class CommandTree
             await ctx.Execute<Api>(ApiKeyCreate, c => c.ApiKeyCreate(ctx));
         else if (ctx.Match("list", "ls", "l"))
             await ctx.Execute<Api>(ApiKeyList, c => c.ApiKeyList(ctx));
+        else if (ctx.Match("deleteall", "removeall", "destroyall", "eraseall", "revokeall", "yeetall"))
+            await ctx.Execute<Api>(ApiKeyDeleteAll, c => c.ApiKeyDeleteAll(ctx));
         else if (!ctx.HasNext())
-            await PrintCommandExpectedError(ctx, ApiKeyCreate, ApiKeyList, ApiKeyRename, ApiKeyDelete);
+            await PrintCommandExpectedError(ctx, ApiKeyCreate, ApiKeyList, ApiKeyRename, ApiKeyDelete, ApiKeyDeleteAll);
         else
         {
             PKApiKey? key = null!;

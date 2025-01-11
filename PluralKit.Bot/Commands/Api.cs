@@ -10,6 +10,8 @@ using Myriad.Types;
 
 using NodaTime;
 
+using SqlKata;
+
 using PluralKit.Core;
 
 namespace PluralKit.Bot;
@@ -324,5 +326,26 @@ public class Api
 
         await ctx.Repository.DeleteApiKey(key.Id);
         await ctx.Reply($"{Emojis.Success} Successfully deleted API key.");
+    }
+
+    public async Task ApiKeyDeleteAll(Context ctx)
+    {
+        if (!await ctx.PromptYesNo($"Really delete *all manually-created* API keys for your system?", "Delete", matchFlag: false))
+        {
+            await ctx.Reply($"{Emojis.Error} Deletion cancelled.");
+            return;
+        }
+
+        await ctx.BusyIndicator(async () =>
+        {
+            var query = new Query("api_keys")
+                .AsDelete()
+                .WhereRaw("[kind]::text not in ( 'dashboard', 'external_app' )")
+                .Where("system", ctx.System.Id);
+
+            await ctx.Database.ExecuteQuery(query);
+        });
+
+        await ctx.Reply($"{Emojis.Success} Successfully deleted all manually-created API keys.");
     }
 }
